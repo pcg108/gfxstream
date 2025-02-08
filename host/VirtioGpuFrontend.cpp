@@ -115,7 +115,9 @@ int VirtioGpuFrontend::init(void* cookie, gfxstream::host::FeatureSet features,
     mPageSize = getpagesize();
 #endif
 
+
     mCleanupThread.reset(new CleanupThread());
+
 
     return 0;
 }

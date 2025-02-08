@@ -21243,6 +21243,7 @@ size_t VkDecoder::Impl::decode(void* buf, size_t len, IOStream* ioStream,
                 uint64_t* pAddress;
                 uint64_t* pSize;
                 uint64_t* pHostmemId;
+                uint32_t context_id;
                 // Begin global wrapped dispatchable handle unboxing for device;
                 uint64_t cgen_var_0;
                 memcpy((uint64_t*)&cgen_var_0, *readStreamPtrPtr, 1 * 8);
@@ -21286,6 +21287,10 @@ size_t VkDecoder::Impl::decode(void* buf, size_t len, IOStream* ioStream,
                     memcpy((uint64_t*)pHostmemId, *readStreamPtrPtr, sizeof(uint64_t));
                     *readStreamPtrPtr += sizeof(uint64_t);
                 }
+
+                memcpy((uint32_t*)&context_id, *readStreamPtrPtr, sizeof(uint32_t));
+                *readStreamPtrPtr += sizeof(uint32_t);
+
                 if (m_logCalls) {
                     fprintf(stderr,
                             "stream %p: call vkGetMemoryHostAddressInfoGOOGLE 0x%llx 0x%llx 0x%llx "
@@ -21297,7 +21302,7 @@ size_t VkDecoder::Impl::decode(void* buf, size_t len, IOStream* ioStream,
                 VkResult vkGetMemoryHostAddressInfoGOOGLE_VkResult_return = (VkResult)0;
                 vkGetMemoryHostAddressInfoGOOGLE_VkResult_return =
                     m_state->on_vkGetMemoryHostAddressInfoGOOGLE(&m_pool, device, memory, pAddress,
-                                                                 pSize, pHostmemId);
+                                                                 pSize, pHostmemId, context_id);
                 if ((vkGetMemoryHostAddressInfoGOOGLE_VkResult_return) == VK_ERROR_DEVICE_LOST)
                     m_state->on_DeviceLost();
                 m_state->on_CheckOutOfMemory(vkGetMemoryHostAddressInfoGOOGLE_VkResult_return,
@@ -22031,6 +22036,7 @@ size_t VkDecoder::Impl::decode(void* buf, size_t len, IOStream* ioStream,
                                       "VkDecoder vkGetBlobGOOGLE");
                 VkDevice device;
                 VkDeviceMemory memory;
+                uint32_t context_id;
                 // Begin global wrapped dispatchable handle unboxing for device;
                 uint64_t cgen_var_0;
                 memcpy((uint64_t*)&cgen_var_0, *readStreamPtrPtr, 1 * 8);
@@ -22041,13 +22047,17 @@ size_t VkDecoder::Impl::decode(void* buf, size_t len, IOStream* ioStream,
                 *readStreamPtrPtr += 1 * 8;
                 *(VkDeviceMemory*)&memory =
                     (VkDeviceMemory)unbox_VkDeviceMemory((VkDeviceMemory)(*&cgen_var_1));
+
+                memcpy((uint32_t*)&context_id, *readStreamPtrPtr, sizeof(uint32_t));
+                *readStreamPtrPtr += sizeof(uint32_t);
+
                 if (m_logCalls) {
                     fprintf(stderr, "stream %p: call vkGetBlobGOOGLE 0x%llx 0x%llx \n", ioStream,
                             (unsigned long long)device, (unsigned long long)memory);
                 }
                 VkResult vkGetBlobGOOGLE_VkResult_return = (VkResult)0;
                 vkGetBlobGOOGLE_VkResult_return =
-                    m_state->on_vkGetBlobGOOGLE(&m_pool, device, memory);
+                    m_state->on_vkGetBlobGOOGLE(&m_pool, device, memory, context_id);
                 if ((vkGetBlobGOOGLE_VkResult_return) == VK_ERROR_DEVICE_LOST)
                     m_state->on_DeviceLost();
                 m_state->on_CheckOutOfMemory(vkGetBlobGOOGLE_VkResult_return, opcode, context);

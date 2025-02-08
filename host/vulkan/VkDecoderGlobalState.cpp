@@ -286,7 +286,11 @@ class BoxedHandleManager {
         delayedRemoves.erase(it);
     }
 
-    T* get(uint64_t h) { return (T*)store.get_const(h); }
+    T* get(uint64_t h) { 
+        if (h == 0) {
+            WARN("dog: %d", h);
+        } 
+        return (T*)store.get_const(h); }
 
     uint64_t getBoxedFromUnboxedLocked(uint64_t unboxed) {
         auto* res = android::base::find(reverseMap, unboxed);
@@ -3523,6 +3527,7 @@ class VkDecoderGlobalState::Impl {
                                        const VkWriteDescriptorSet* pDescriptorWrites,
                                        uint32_t descriptorCopyCount,
                                        const VkCopyDescriptorSet* pDescriptorCopies) {
+                                        
         for (uint32_t writeIdx = 0; writeIdx < descriptorWriteCount; writeIdx++) {
             const VkWriteDescriptorSet& descriptorWrite = pDescriptorWrites[writeIdx];
             auto ite = mDescriptorSetInfo.find(descriptorWrite.dstSet);
@@ -5562,7 +5567,7 @@ class VkDecoderGlobalState::Impl {
         return VK_SUCCESS;
     }
 
-    VkResult vkGetBlobInternal(VkDevice boxed_device, VkDeviceMemory memory, uint64_t hostBlobId) {
+    VkResult vkGetBlobInternal(VkDevice boxed_device, VkDeviceMemory memory, uint64_t hostBlobId, uint32_t context_id) {
         auto device = unbox_VkDevice(boxed_device);
         auto vk = dispatch_VkDevice(boxed_device);
 
@@ -5573,7 +5578,8 @@ class VkDecoderGlobalState::Impl {
             ERR("VkDevice:%p missing context id for vkAllocateMemory().");
             return VK_ERROR_OUT_OF_HOST_MEMORY;
         }
-        const uint32_t virtioGpuContextId = *virtioGpuContextIdOpt;
+        // const uint32_t virtioGpuContextId = *virtioGpuContextIdOpt;
+        const uint32_t virtioGpuContextId = context_id;
 
         auto* info = android::base::find(mMemoryInfo, memory);
         if (!info) return VK_ERROR_OUT_OF_HOST_MEMORY;
@@ -5695,17 +5701,17 @@ class VkDecoderGlobalState::Impl {
     }
 
     VkResult on_vkGetBlobGOOGLE(android::base::BumpPool* pool, VkDevice boxed_device,
-                                VkDeviceMemory memory) {
-        return vkGetBlobInternal(boxed_device, memory, 0);
+                                VkDeviceMemory memory, uint32_t context_id) {
+        return vkGetBlobInternal(boxed_device, memory, 0, context_id);
     }
 
     VkResult on_vkGetMemoryHostAddressInfoGOOGLE(android::base::BumpPool* pool,
                                                  VkDevice boxed_device, VkDeviceMemory memory,
                                                  uint64_t* pAddress, uint64_t* pSize,
-                                                 uint64_t* pHostmemId) {
+                                                 uint64_t* pHostmemId, uint32_t context_id) {
         hostBlobId++;
         *pHostmemId = hostBlobId;
-        return vkGetBlobInternal(boxed_device, memory, hostBlobId);
+        return vkGetBlobInternal(boxed_device, memory, hostBlobId, 0);
     }
 
     VkResult on_vkFreeMemorySyncGOOGLE(android::base::BumpPool* pool, VkDevice boxed_device,
@@ -6988,7 +6994,7 @@ class VkDecoderGlobalState::Impl {
                 << "descriptor pool " << pool << " not found ";
         }
 
-        DispatchableHandleInfo<uint64_t>* setHandleInfo = sBoxedHandleManager.get(poolId);
+        DispatchableHandleInfo<uint64_t>* setHandleInfo = sBoxedHandleManager.get(poolId); // 3377712605429786
 
         if (setHandleInfo->underlying) {
             if (pendingAlloc) {
@@ -7561,13 +7567,13 @@ class VkDecoderGlobalState::Impl {
 
     uint64_t newGlobalHandle(const DispatchableHandleInfo<uint64_t>& item,
                              BoxedHandleTypeTag typeTag) {
+
         if (!mCreatedHandlesForSnapshotLoad.empty() &&
             (mCreatedHandlesForSnapshotLoad.size() - mCreatedHandlesForSnapshotLoadIndex > 0)) {
             auto handle = mCreatedHandlesForSnapshotLoad[mCreatedHandlesForSnapshotLoadIndex];
             VKDGS_LOG("use handle: 0x%lx underlying 0x%lx", handle, item.underlying);
             ++mCreatedHandlesForSnapshotLoadIndex;
             auto res = sBoxedHandleManager.addFixed(handle, item, typeTag);
-
             return res;
         } else {
             return sBoxedHandleManager.add(item, typeTag);
@@ -9352,14 +9358,14 @@ VkResult VkDecoderGlobalState::on_vkMapMemoryIntoAddressSpaceGOOGLE(android::bas
 
 VkResult VkDecoderGlobalState::on_vkGetMemoryHostAddressInfoGOOGLE(
     android::base::BumpPool* pool, VkDevice device, VkDeviceMemory memory, uint64_t* pAddress,
-    uint64_t* pSize, uint64_t* pHostmemId) {
+    uint64_t* pSize, uint64_t* pHostmemId, uint32_t context_id) {
     return mImpl->on_vkGetMemoryHostAddressInfoGOOGLE(pool, device, memory, pAddress, pSize,
-                                                      pHostmemId);
+                                                      pHostmemId, context_id);
 }
 
 VkResult VkDecoderGlobalState::on_vkGetBlobGOOGLE(android::base::BumpPool* pool, VkDevice device,
-                                                  VkDeviceMemory memory) {
-    return mImpl->on_vkGetBlobGOOGLE(pool, device, memory);
+                                                  VkDeviceMemory memory, uint32_t context_id) {
+    return mImpl->on_vkGetBlobGOOGLE(pool, device, memory, context_id);
 }
 
 VkResult VkDecoderGlobalState::on_vkFreeMemorySyncGOOGLE(android::base::BumpPool* pool,

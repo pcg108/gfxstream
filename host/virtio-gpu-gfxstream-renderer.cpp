@@ -172,7 +172,6 @@ void stream_renderer_log(uint32_t type, const char* file, int line, const char* 
         return;
     }
 #endif
-
     // To a gfxstream debugger?
     if (globalUserData && globalDebugCallback) {
         struct stream_renderer_debug debug = {0};
@@ -1071,7 +1070,7 @@ VG_EXPORT int stream_renderer_init(struct stream_renderer_param* stream_renderer
 
     sFrontend()->init(renderer_cookie, features, fence_callback);
     gfxstream::FrameBuffer::waitUntilInitialized();
-
+    
     stream_renderer_info("Gfxstream initialized successfully!");
     return 0;
 }

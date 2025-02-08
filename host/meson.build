@@ -75,7 +75,7 @@ else
   aemu_common_dep = dependency('aemu_host_common')
   aemu_logging_dep = dependency('aemu_logging')
   aemu_snapshot_dep = dependency('aemu_snapshot')
-  dl_dep = dependency('dl')
+  dl_dep = cc.find_library('dl', required: true) #dependency('dl')
   thread_dep = dependency('threads')
   gfxstream_host_args += '-DGFXSTREAM_UNSTABLE_VULKAN_EXTERNAL_SYNC=1'
   gfxstream_host_args += '-DGFXSTREAM_UNSTABLE_VULKAN_DMABUF_WINSYS=1'
